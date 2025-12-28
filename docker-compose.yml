@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  go-proxy-every:
+    build: .
+    image: ghcr.io/nsmao-com/go_proxy_every:latest
+    container_name: go-proxy-every
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s

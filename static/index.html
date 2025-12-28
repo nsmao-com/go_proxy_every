@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反向代理管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-base: #F2F2F7;
+            --bg-elevated: rgba(255, 255, 255, 0.7);
+            --bg-glass: rgba(255, 255, 255, 0.5);
+            --text-primary: #1C1C1E;
+            --text-secondary: #8E8E93;
+            --text-tertiary: #AEAEB2;
+            --border-outer: rgba(0, 0, 0, 0.04);
+            --border-inner: rgba(255, 255, 255, 0.8);
+            --shadow-elevated: 0 24px 48px -12px rgba(0, 0, 0, 0.08);
+            --shadow-card: 0 8px 32px -8px rgba(0, 0, 0, 0.06);
+            --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+            --accent: #1C1C1E;
+            --accent-hover: #3A3A3C;
+            --success: #34C759;
+            --danger: #FF3B30;
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+            background: var(--bg-base);
+            min-height: 100vh;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--bg-elevated);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border-radius: 40px;
+            padding: 48px 40px;
+            border: 1px solid var(--border-inner);
+            box-shadow: var(--shadow-elevated), inset 0 0 0 1px var(--border-inner);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-logo {
+            width: 72px;
+            height: 72px;
+            background: var(--accent);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 24px rgba(28, 28, 30, 0.15);
+        }
+
+        .login-logo svg {
+            width: 36px;
+            height: 36px;
+            color: white;
+        }
+
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            padding-left: 4px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-outer);
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-inset);
+        }
+
+        .form-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.8);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(28, 28, 30, 0.08);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .captcha-row {
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .captcha-row .form-input {
+            flex: 1;
+        }
+
+        .captcha-img {
+            height: 52px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .captcha-img:hover {
+            opacity: 0.8;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 28px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 16px rgba(28, 28, 30, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(28, 28, 30, 0.25);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text-primary);
+            border: 1px solid var(--border-outer);
+            box-shadow: var(--shadow-card);
+        }
+
+        .btn-secondary:hover {
+            background: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 10px 18px;
+            font-size: 13px;
+            border-radius: var(--radius-sm);
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: var(--radius-sm);
+        }
+
+        .error-message {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--danger);
+            padding: 14px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .login-container.hidden {
+            display: none;
+        }
+
+        .topbar {
+            background: var(--bg-elevated);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border-bottom: 1px solid var(--border-outer);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .topbar-logo {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .topbar-logo svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        .topbar-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 32px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .card {
+            background: var(--bg-elevated);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border-inner);
+            box-shadow: var(--shadow-card), inset 0 0 0 1px var(--border-inner);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 8px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 4px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        td {
+            padding: 18px 20px;
+            background: rgba(0, 0, 0, 0.02);
+            vertical-align: middle;
+        }
+
+        tr td:first-child {
+            border-radius: var(--radius-md) 0 0 var(--radius-md);
+        }
+
+        tr td:last-child {
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        }
+
+        .rule-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .rule-path {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            background: rgba(28, 28, 30, 0.06);
+            padding: 6px 12px;
+            border-radius: 8px;
+            color: var(--text-primary);
+        }
+
+        .rule-target {
+            color: var(--text-secondary);
+            font-size: 14px;
+            max-width: 280px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 32px;
+            cursor: pointer;
+        }
+
+        .toggle input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #E5E5EA;
+            border-radius: 16px;
+            transition: all 0.25s ease;
+        }
+
+        .toggle-slider::before {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 28px;
+            height: 28px;
+            background: white;
+            border-radius: 14px;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background: #1C1C1E;
+        }
+
+        .toggle input:checked + .toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        .toggle:hover .toggle-slider {
+            background: #D1D1D6;
+        }
+
+        .toggle:hover input:checked + .toggle-slider {
+            background: #3A3A3C;
+        }
+
+        .toggle:active .toggle-slider::before {
+            width: 32px;
+        }
+
+        .toggle:active input:checked + .toggle-slider::before {
+            transform: translateX(16px);
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+
+        .empty-icon svg {
+            width: 40px;
+            height: 40px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 24px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 480px;
+            background: var(--bg-base);
+            border-radius: 32px;
+            box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.2);
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 28px 32px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 0, 0, 0.06);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-close svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            padding: 28px 32px;
+        }
+
+        .modal-footer {
+            padding: 0 32px 28px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-footer .btn {
+            flex: 1;
+        }
+
+        .path-preview {
+            margin-top: 10px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: var(--radius-sm);
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .form-check input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            accent-color: var(--accent);
+        }
+
+        .form-check label {
+            font-size: 15px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            padding: 16px 24px;
+            background: var(--accent);
+            color: white;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 14px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+            animation: toastIn 0.3s ease;
+            z-index: 2000;
+        }
+
+        .toast-success {
+            background: var(--success);
+        }
+
+        .toast-error {
+            background: var(--danger);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-elevated);
+            backdrop-filter: blur(60px);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border-inner);
+            box-shadow: var(--shadow-card);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 12px 20px;
+            }
+
+            .main-content {
+                padding: 24px 16px;
+            }
+
+            .card-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            .modal {
+                border-radius: 24px;
+            }
+
+            .modal-header, .modal-body, .modal-footer {
+                padding-left: 24px;
+                padding-right: 24px;
+            }
+
+            th, td {
+                padding: 14px 16px;
+            }
+
+            .topbar-actions {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div class="login-container" id="loginPage">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                </div>
+                <h1 class="login-title">反向代理管理</h1>
+                <p class="login-subtitle">请登录以管理代理规则</p>
+            </div>
+
+            <div class="error-message" id="loginError"></div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">用户名</label>
+                    <input type="text" class="form-input" id="loginUsername" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">密码</label>
+                    <input type="password" class="form-input" id="loginPassword" placeholder="请输入密码" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">验证码</label>
+                    <div class="captcha-row">
+                        <input type="text" class="form-input" id="loginCaptcha" placeholder="请输入验证码" required maxlength="4">
+                        <img class="captcha-img" id="captchaImg" onclick="refreshCaptcha()" title="点击刷新">
+                    </div>
+                </div>
+                <input type="hidden" id="captchaId">
+                <button type="submit" class="btn btn-primary">登 录</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 仪表盘 -->
+    <div class="dashboard" id="dashboard">
+        <div class="topbar">
+            <div class="topbar-brand">
+                <div class="topbar-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                </div>
+                <span class="topbar-title">反向代理管理</span>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn btn-secondary btn-sm" onclick="openPasswordModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    修改密码
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="handleLogout()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    退出登录
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">代理规则</h1>
+                <p class="page-subtitle">管理您的反向代理配置</p>
+            </div>
+
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-label">规则总数</div>
+                    <div class="stat-value" id="statTotal">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">已启用</div>
+                    <div class="stat-value" id="statActive">0</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">所有规则</h2>
+                    <button class="btn btn-primary btn-sm" onclick="openRuleModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        添加规则
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-container" id="tableContainer">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>名称</th>
+                                    <th>路径</th>
+                                    <th>目标地址</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rulesBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="empty-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="2" y1="12" x2="22" y2="12"/>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                        </div>
+                        <h3 class="empty-title">暂无代理规则</h3>
+                        <p class="empty-text">点击"添加规则"创建您的第一条代理规则</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 规则弹窗 -->
+    <div class="modal-overlay" id="ruleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="ruleModalTitle">添加规则</h3>
+                <button class="modal-close" onclick="closeRuleModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="ruleForm" onsubmit="handleSaveRule(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="ruleId">
+                    <div class="form-group">
+                        <label class="form-label">规则名称</label>
+                        <input type="text" class="form-input" id="ruleName" placeholder="例如：我的网站" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">代理路径（不需要带斜杠）</label>
+                        <input type="text" class="form-input" id="rulePath" placeholder="例如：mysite" required oninput="updatePathPreview()">
+                        <div class="path-preview" id="pathPreview">访问路径：/</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">目标地址</label>
+                        <input type="url" class="form-input" id="ruleTarget" placeholder="例如：https://example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="ruleEnabled" checked>
+                            <label for="ruleEnabled">启用此规则</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRuleModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 密码弹窗 -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">修改密码</h3>
+                <button class="modal-close" onclick="closePasswordModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="passwordForm" onsubmit="handleChangePassword(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">当前密码</label>
+                        <input type="password" class="form-input" id="oldPassword" placeholder="请输入当前密码" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">新密码</label>
+                        <input type="password" class="form-input" id="newPassword" placeholder="请输入新密码" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">确认修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api';
+        let rules = [];
+
+        // 封装fetch，自动带上credentials
+        async function request(url, options = {}) {
+            return fetch(url, {
+                ...options,
+                credentials: 'include'
+            });
+        }
+
+        // 检查登录状态
+        async function checkAuth() {
+            try {
+                const res = await request(`${API}/check-auth`);
+                const data = await res.json();
+                if (data.code === 0) {
+                    showDashboard();
+                    loadRules();
+                } else {
+                    refreshCaptcha();
+                }
+            } catch (e) {
+                refreshCaptcha();
+            }
+        }
+
+        // 刷新验证码
+        async function refreshCaptcha() {
+            try {
+                const res = await request(`${API}/captcha`);
+                const data = await res.json();
+                if (data.code === 0) {
+                    document.getElementById('captchaImg').src = data.data.captcha_img;
+                    document.getElementById('captchaId').value = data.data.captcha_id;
+                    document.getElementById('loginCaptcha').value = '';
+                }
+            } catch (e) {
+                console.error('获取验证码失败');
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('dashboard').classList.add('active');
+        }
+
+        function showLogin() {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('dashboard').classList.remove('active');
+            refreshCaptcha();
+        }
+
+        // 登录
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const captchaCode = document.getElementById('loginCaptcha').value;
+            const captchaId = document.getElementById('captchaId').value;
+            const errorEl = document.getElementById('loginError');
+
+            try {
+                const res = await request(`${API}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        password,
+                        captcha_id: captchaId,
+                        captcha_code: captchaCode
+                    })
+                });
+                const data = await res.json();
+
+                if (data.code === 0) {
+                    errorEl.style.display = 'none';
+                    showDashboard();
+                    loadRules();
+                } else {
+                    errorEl.textContent = data.message;
+                    errorEl.style.display = 'block';
+                    refreshCaptcha();
+                }
+            } catch (e) {
+                errorEl.textContent = '登录失败，请重试';
+                errorEl.style.display = 'block';
+                refreshCaptcha();
+            }
+        }
+
+        // 退出登录
+        async function handleLogout() {
+            await request(`${API}/logout`, { method: 'POST' });
+            showLogin();
+            document.getElementById('loginForm').reset();
+        }
+
+        // 加载规则
+        async function loadRules() {
+            try {
+                const res = await request(`${API}/rules`);
+                const data = await res.json();
+                if (data.code === 0) {
+                    rules = data.data || [];
+                    renderRules();
+                    updateStats();
+                }
+            } catch (e) {
+                showToast('加载规则失败', 'error');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('statTotal').textContent = rules.length;
+            document.getElementById('statActive').textContent = rules.filter(r => r.enabled).length;
+        }
+
+        function renderRules() {
+            const tbody = document.getElementById('rulesBody');
+            const empty = document.getElementById('emptyState');
+            const table = document.getElementById('tableContainer');
+
+            if (rules.length === 0) {
+                table.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+
+            table.style.display = 'block';
+            empty.style.display = 'none';
+
+            tbody.innerHTML = rules.map(rule => `
+                <tr>
+                    <td><span class="rule-name">${escapeHtml(rule.name)}</span></td>
+                    <td><span class="rule-path">/${escapeHtml(rule.path)}</span></td>
+                    <td><span class="rule-target" title="${escapeHtml(rule.target)}">${escapeHtml(rule.target)}</span></td>
+                    <td>
+                        <label class="toggle">
+                            <input type="checkbox" ${rule.enabled ? 'checked' : ''} onchange="toggleRule('${rule.id}', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn btn-secondary btn-icon" onclick="editRule('${rule.id}')" title="编辑">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-danger btn-icon" onclick="deleteRule('${rule.id}')" title="删除">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 规则弹窗
+        function openRuleModal(isEdit = false) {
+            document.getElementById('ruleModal').classList.add('active');
+            document.getElementById('ruleModalTitle').textContent = isEdit ? '编辑规则' : '添加规则';
+            if (!isEdit) {
+                document.getElementById('ruleForm').reset();
+                document.getElementById('ruleId').value = '';
+                document.getElementById('ruleEnabled').checked = true;
+                updatePathPreview();
+            }
+        }
+
+        function closeRuleModal() {
+            document.getElementById('ruleModal').classList.remove('active');
+        }
+
+        function updatePathPreview() {
+            const path = document.getElementById('rulePath').value;
+            document.getElementById('pathPreview').textContent = `访问路径：/${path || ''}`;
+        }
+
+        async function handleSaveRule(e) {
+            e.preventDefault();
+            const id = document.getElementById('ruleId').value;
+            const data = {
+                name: document.getElementById('ruleName').value,
+                path: document.getElementById('rulePath').value.replace(/^\//, ''),
+                target: document.getElementById('ruleTarget').value,
+                enabled: document.getElementById('ruleEnabled').checked
+            };
+
+            try {
+                let res;
+                if (id) {
+                    data.id = id;
+                    res = await request(`${API}/rules`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    res = await request(`${API}/rules`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                }
+
+                const result = await res.json();
+                if (result.code === 0) {
+                    showToast(id ? '规则已更新' : '规则已创建', 'success');
+                    closeRuleModal();
+                    loadRules();
+                } else {
+                    showToast(result.message || '保存失败', 'error');
+                }
+            } catch (e) {
+                showToast('保存规则失败', 'error');
+            }
+        }
+
+        function editRule(id) {
+            const rule = rules.find(r => r.id === id);
+            if (!rule) return;
+
+            document.getElementById('ruleId').value = rule.id;
+            document.getElementById('ruleName').value = rule.name;
+            document.getElementById('rulePath').value = rule.path;
+            document.getElementById('ruleTarget').value = rule.target;
+            document.getElementById('ruleEnabled').checked = rule.enabled;
+            updatePathPreview();
+            openRuleModal(true);
+        }
+
+        async function deleteRule(id) {
+            if (!confirm('确定要删除这条规则吗？')) return;
+
+            try {
+                const res = await request(`${API}/rules`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+
+                const result = await res.json();
+                if (result.code === 0) {
+                    showToast('规则已删除', 'success');
+                    loadRules();
+                } else {
+                    showToast(result.message || '删除失败', 'error');
+                }
+            } catch (e) {
+                showToast('删除规则失败', 'error');
+            }
+        }
+
+        async function toggleRule(id, enabled) {
+            try {
+                const res = await request(`${API}/rules/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, enabled })
+                });
+
+                const result = await res.json();
+                if (result.code === 0) {
+                    showToast(enabled ? '规则已启用' : '规则已禁用', 'success');
+                    loadRules();
+                } else {
+                    showToast(result.message || '操作失败', 'error');
+                    loadRules();
+                }
+            } catch (e) {
+                showToast('操作失败', 'error');
+                loadRules();
+            }
+        }
+
+        // 密码弹窗
+        function openPasswordModal() {
+            document.getElementById('passwordModal').classList.add('active');
+            document.getElementById('passwordForm').reset();
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('active');
+        }
+
+        async function handleChangePassword(e) {
+            e.preventDefault();
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            try {
+                const res = await request(`${API}/change-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+                });
+
+                const result = await res.json();
+                if (result.code === 0) {
+                    showToast('密码修改成功', 'success');
+                    closePasswordModal();
+                } else {
+                    showToast(result.message || '密码修改失败', 'error');
+                }
+            } catch (e) {
+                showToast('密码修改失败', 'error');
+            }
+        }
+
+        // 提示
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 点击遮罩关闭弹窗
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // 初始化
+        checkAuth();
+    </script>
+</body>
+</html>

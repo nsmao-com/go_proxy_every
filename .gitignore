@@ -34,3 +34,6 @@ data/*.json
 
 # Claude
 .claude/
+
+# Temp
+tmp/

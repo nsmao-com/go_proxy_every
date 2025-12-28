@@ -17,10 +17,10 @@ COPY main.go ./
 # Download dependencies
 RUN go mod download
 
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -o proxy . && \
-    ls -la /app/proxy && \
-    chmod +x /app/proxy
+# Build the binary (use 'server' to avoid conflict with proxy/ directory)
+RUN CGO_ENABLED=0 GOOS=linux go build -o server . && \
+    ls -la /app/server && \
+    chmod +x /app/server
 
 # Runtime stage
 FROM alpine:3.19
@@ -29,9 +29,9 @@ WORKDIR /app
 
 RUN apk --no-cache add ca-certificates tzdata
 
-COPY --from=builder /app/proxy /app/proxy
+COPY --from=builder /app/server /app/server
 
-RUN chmod +x /app/proxy && ls -la /app/proxy
+RUN chmod +x /app/server && ls -la /app/server
 
 RUN mkdir -p /app/data
 
@@ -39,4 +39,4 @@ EXPOSE 8080
 
 ENV TZ=Asia/Shanghai
 
-CMD ["/app/proxy"]
+CMD ["/app/server"]

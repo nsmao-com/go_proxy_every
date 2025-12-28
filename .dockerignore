@@ -4,6 +4,7 @@
 
 # Documentation
 README.md
+README_CN.md
 LICENSE
 
 # IDE
@@ -12,7 +13,6 @@ LICENSE
 
 # Binaries
 *.exe
-proxy
 
 # Data (will be mounted as volume)
 data/
@@ -24,3 +24,7 @@ docker-compose.yml
 
 # GitHub
 .github/
+
+# Temp
+tmp/
+.claude/

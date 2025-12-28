@@ -9,11 +9,14 @@ RUN apk add --no-cache git
 # Copy all source code first (needed for local package imports)
 COPY . .
 
+# Show files for debugging
+RUN ls -la && ls -la static/
+
 # Download dependencies
 RUN go mod download
 
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o proxy .
+# Build the binary with verbose output
+RUN CGO_ENABLED=0 GOOS=linux go build -v -a -installsuffix cgo -o proxy .
 
 # Runtime stage
 FROM alpine:3.19

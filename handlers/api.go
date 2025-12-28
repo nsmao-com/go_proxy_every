@@ -3,8 +3,8 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"go_frame/auth"
-	"go_frame/config"
+	"go_proxy_every/auth"
+	"go_proxy_every/config"
 	"image"
 	"image/color"
 	"image/png"

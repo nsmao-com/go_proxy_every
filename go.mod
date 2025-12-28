@@ -1,4 +1,4 @@
-module go_frame
+module go_proxy_every
 
 go 1.23.2
 

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"go_frame/config"
+	"go_proxy_every/config"
 	"io"
 	"log"
 	"net/http"

@@ -2,10 +2,10 @@ package main
 
 import (
 	"embed"
-	"go_frame/auth"
-	"go_frame/config"
-	"go_frame/handlers"
-	"go_frame/proxy"
+	"go_proxy_every/auth"
+	"go_proxy_every/config"
+	"go_proxy_every/handlers"
+	"go_proxy_every/proxy"
 	"io/fs"
 	"log"
 	"net/http"
